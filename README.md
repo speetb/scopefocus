@@ -1,7 +1,7 @@
-# scopefocus
-Tinkerings into DIY autofocus motor controller for telescopes using Moonlite protocol
+# Scopefocus
 
-Stepper motor with controller/ driver directly on the back side.
+To reduce the amount of wires and additional modules on the telescope, this focuser controller is implemented on the back of a stepper motor and requires only 1 connecton (USB)
+At the same time, it will allow the use of more power and the connection to a temperature sensor and a RC servo (for future work).
 The stepper driver is powered from either the USB or from an 5.5 mm barrel connector (up to 24 V). Selectable by a jumper.
 
 Currently works:
