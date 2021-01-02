@@ -37,4 +37,6 @@ Not for now, but something to think about:
 
 Code originally adopted from https://github.com/orlyandico/arduino-focuser-moonlite
 
+
+Here is the prototype connected to my 8" Celestron:
 ![Focuser attached to telescope](https://raw.githubusercontent.com/speetb/scopefocus/main/Installed.jpg)
