@@ -36,3 +36,5 @@ Not for now, but something to think about:
 - Use the servo output and enable 'mirror lock' as a functionality (bool MirrorLock = true/ false) for Schmidt-Cassegrain telescopes.
 
 Code originally adopted from https://github.com/orlyandico/arduino-focuser-moonlite
+
+![Focuser attached to telescope](https://raw.githubusercontent.com/speetb/scopefocus/main/Installed.jpg)
