@@ -23,7 +23,7 @@ Using libraries:
 - TMC2130 https://github.com/teemuatlut/TMC2130Stepper
 
 TODO:
-- library only for AVR/ ESP boards ~~Implement faster IR recieve library. Maybe: https://github.com/NicoHood/IRLremote~~
+- ~~Implement faster IR recieve library. Maybe: https://github.com/NicoHood/IRLremote~~ Library only for AVR/ ESP boards
 - Make temp reading fast (fast analog read) and non-blocking (example: BlinkWithOutDelay).
 - Reduce/ eliminate floating point math.
 - Create own fast stepper library using:
