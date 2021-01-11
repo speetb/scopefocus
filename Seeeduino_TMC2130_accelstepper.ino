@@ -3,14 +3,14 @@
 #include <Servo.h>
 #include <IRremote.h>
 
-#define MaxSpeed    10000 //Max speed in steps/s
-#define MaxAcc       5000 //Max acc. in steps/s/s
+#define MaxSpeed    3000  //Max speed in steps/s
+#define MaxAcc      6000  //Max acc. in steps/s/s
 #define Direction   false //Focuser direction using true or false
-#define RunCurrent  600   //RMS current when moving
+#define RunCurrent  700   //RMS current when moving
 #define HoldTime    2     //how long to hold RunCurrent after a move
-#define HoldCurrent 50    //RMS current when still
+#define HoldCurrent 80    //RMS current when still
 #define Microsteps  16    //From 1 to 265 possible
-#define TempAvgs    5     //Average this many Temperature readings
+#define TempAvgs    3     //Average this many Temperature readings
 
 #define EnPin       6
 #define DirPin      5
@@ -116,21 +116,23 @@ void loop(){
           results.value = key_value;
         switch(results.value){
           case 0xFFA25D:
-          Speed -= 500;
+          Speed -= 100;
             if (Speed <= 0){
             Speed = 100;
             }
           //delay(100); //TODO non-blocking
-          stepper.setMaxSpeed(Speed);
+          stepper.setSpeed(Speed);
+          //stepper.setMaxSpeed(Speed);
           break;
           
           case 0xFFE21D:
-          Speed += 500;
+          Speed += 100;
             if (Speed > MaxSpeed){
             Speed = MaxSpeed;
             }
           //delay(100); //TODO non-blocking
-          stepper.setMaxSpeed(Speed);
+          stepper.setSpeed(Speed);
+          //stepper.setMaxSpeed(Speed);
           isRunning = true;
           break;
 
