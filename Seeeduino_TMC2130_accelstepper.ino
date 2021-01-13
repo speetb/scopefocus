@@ -51,11 +51,15 @@ void setup() {
   
   driver.begin();
   driver.rms_current(RunCurrent);
+  driver.microsteps(Microsteps);
   driver.stealthChop(1);
   driver.stealth_autoscale(1);
   driver.interpolate(1);
-  driver.off_time(1);
-  driver.microsteps(Microsteps);
+  
+  driver.off_time(3);
+  driver.blank_time(24);
+  driver.hysterisis_start(0);
+  driver.hysterisis_end(13);
   
   stepper.setMaxSpeed(Speed);
   stepper.setSpeed(Speed);
