@@ -5,7 +5,7 @@
 
 #define MaxSpeed    3000  //Max speed in steps/s
 #define MaxAcc      6000  //Max accelleration in steps/s/s
-#define TurnDir     True  //Focuser rotation direction using true or false
+#define TurnDir     true  //Focuser rotation direction using true or false
 #define RunCurrent  700   //RMS current (in Ampere) when moving
 #define HoldTime    2     //How long (in miliseconds) to hold RunCurrent after a move
 #define HoldCurrent 80    //RMS current (in Ampere) when still
@@ -15,10 +15,10 @@
 #define EnPin       6
 #define DirPin      5
 #define StepPin     4
-#define CsPin       7
-#define TempPin     A2
+#define CsPin       8
+#define TempPin     A1
 #define RecieverPin 3
-#define ServoPin    1
+#define ServoPin    2
 
 TMC2130Stepper driver = TMC2130Stepper(EnPin, DirPin, StepPin, CsPin);
 AccelStepper stepper = AccelStepper(stepper.DRIVER, StepPin, DirPin);
