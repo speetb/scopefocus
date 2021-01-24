@@ -12,13 +12,14 @@
 #define Microsteps  16    //Can be one of these: 1, 2, 4, 8, 16, 32, 64, 128, 256.
 #define TempAvgs    5     //Average this many temperature readings
 
-#define EnPin       6
-#define DirPin      5
-#define StepPin     4
-#define CsPin       8
-#define TempPin     A1
-#define RecieverPin 3
-#define ServoPin    2
+#define EnPin       5
+#define DirPin      4
+#define StepPin     3
+#define CsPin       7
+#define TempPin     A0
+#define RecieverPin 2
+#define ServoPin    1
+//#define DiagPin 7
 
 TMC2130Stepper driver = TMC2130Stepper(EnPin, DirPin, StepPin, CsPin);
 AccelStepper stepper = AccelStepper(stepper.DRIVER, StepPin, DirPin);
@@ -32,7 +33,7 @@ char      param[8];
 char      line[8];
 int32_t   Pos;
 int16_t   Temperature = 40;
-uint8_t   Direction = 0;
+//uint8_t   Direction = 0;
 bool      isRunning = false;
 int16_t   Speed = int(MaxSpeed / 2);
 uint8_t   eoc = 0;
@@ -57,10 +58,10 @@ void setup() {
   driver.stealth_autoscale(1);
   driver.interpolate(1);
   
-  driver.off_time(3);
-  driver.blank_time(24);
-  driver.hysterisis_start(0);
-  driver.hysterisis_end(13);
+//  driver.off_time(3);
+//  driver.blank_time(24);
+//  driver.hysterisis_start(0);
+//  driver.hysterisis_end(13);
   
   stepper.setMaxSpeed(Speed);
   stepper.setSpeed(Speed);
