@@ -4,13 +4,13 @@
 #include <IRremote.h>
 
 #define MaxSpeed    3000  //Max speed in steps/s
-#define MaxAcc      6000  //Max accelleration in steps/s/s
+#define MaxAcc      6000  //Max acceleration in steps/s/s
 #define TurnDir     true  //Focuser rotation direction using true or false
-#define RunCurrent  700   //RMS current (in Ampere) when moving
+#define RunCurrent  800   //RMS current (in Ampere) when moving
 #define HoldTime    2     //How long (in miliseconds) to hold RunCurrent after a move
-#define HoldCurrent 80    //RMS current (in Ampere) when still
-#define Microsteps  16    //Can be one of these: 1, 2, 4, 8, 16, 32, 64, 128, 256.
-#define TempAvgs    5     //Average this many temperature readings
+#define HoldCurrent 100   //RMS current (in Ampere) when still
+#define Microsteps  16    //Can be: 1, 2, 4, 8, 16, 32, 64, 128, 256.
+#define TempAvgs    5     //Temperature readings to average
 
 #define EnPin       5
 #define DirPin      4
@@ -58,7 +58,7 @@ void setup() {
   driver.stealth_autoscale(1);
   driver.interpolate(1);
   
-//  driver.off_time(3);
+//  driver.off_time(2);
 //  driver.blank_time(24);
 //  driver.hysterisis_start(0);
 //  driver.hysterisis_end(13);
