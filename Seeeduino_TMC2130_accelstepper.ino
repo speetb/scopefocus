@@ -3,22 +3,35 @@
 #include <Servo.h>
 #include <IRremote.h>
 
-#define MaxSpeed    3000  //Max speed in steps/s
+#define MaxSpeed    2000  //Max speed in steps/s
 #define MaxAcc      6000  //Max accelleration in steps/s/s
 #define TurnDir     true  //Focuser rotation direction using true or false
-#define RunCurrent  700   //RMS current (in Ampere) when moving
+#define RunCurrent  1200  //RMS current (in Ampere) when moving
 #define HoldTime    2     //How long (in miliseconds) to hold RunCurrent after a move
-#define HoldCurrent 80    //RMS current (in Ampere) when still
-#define Microsteps  16    //Can be one of these: 1, 2, 4, 8, 16, 32, 64, 128, 256.
+#define HoldCurrent 120   //RMS current (in Ampere) when still
+#define Microsteps  8     //Can be one of these: 1, 2, 4, 8, 16, 32, 64, 128, 256.
 #define TempAvgs    5     //Average this many temperature readings
+#define Backlash    100   //How many steps to over-travel for single-direction focusing
 
+
+//Pin def for my prototype
 #define EnPin       6
 #define DirPin      5
 #define StepPin     4
-#define CsPin       8
-#define TempPin     A1
+#define CsPin       7
+#define TempPin     A0
 #define RecieverPin 3
-#define ServoPin    2
+#define AuxPin      0
+//#define DiagPin     7
+
+//Pin def for ScopeFocus v1.1 - TODO: confirm
+//#define EnPin       6
+//#define DirPin      5
+//#define StepPin     4
+//#define CsPin       8
+//#define TempPin     A1
+//#define RecieverPin 3
+//#define ServoPin    2
 
 TMC2130Stepper driver = TMC2130Stepper(EnPin, DirPin, StepPin, CsPin);
 AccelStepper stepper = AccelStepper(stepper.DRIVER, StepPin, DirPin);
@@ -30,11 +43,11 @@ char      inChar;
 char      cmd[8];
 char      param[8];
 char      line[8];
-int32_t   Pos;
+int32_t   Pos = 10000;
 int16_t   Temperature = 40;
-uint8_t   Direction = 0;
+uint8_t   Dir = 0;
 bool      isRunning = false;
-int16_t   Speed = int(MaxSpeed / 2);
+int16_t   Speed = MaxSpeed;
 uint8_t   eoc = 0;
 uint8_t   idx = 0;
 int16_t   TempSum = 0;
@@ -57,20 +70,19 @@ void setup() {
   driver.stealth_autoscale(1);
   driver.interpolate(1);
   
-  driver.off_time(3);
-  driver.blank_time(24);
-  driver.hysterisis_start(0);
-  driver.hysterisis_end(13);
+//  driver.off_time(2);
+//  driver.blank_time(24);
+//  driver.hysterisis_start(0);
+//  driver.hysterisis_end(13);
   
   stepper.setMaxSpeed(Speed);
   stepper.setSpeed(Speed);
   stepper.setAcceleration(MaxAcc);
   stepper.setEnablePin(EnPin);
-  stepper.setPinsInverted(TurnDir, false, true);
+  stepper.setPinsInverted(true, false, true);
   stepper.enableOutputs();
 
-//  servo.attach(ServoPin);
-  
+//  servo.attach(AuxPin);
   irrecv.enableIRIn();
   
   memset(line, 0, 8);
@@ -78,38 +90,43 @@ void setup() {
 }
 
 
-
 void loop(){
   // run the stepper if there's no pending command and if there are pending movements
-  if(!Serial.available()){
-    if(isRunning){
+  if (!Serial.available()){
+    if (isRunning){
       driver.rms_current(RunCurrent);
       stepper.run();
       millisLastMove = millis();
     } 
     else{
-      if((millis() - millisLastMove) > HoldTime){
+      if ((millis() - millisLastMove) > HoldTime){
         driver.rms_current(HoldCurrent);
       }
     }
-
-    if(stepper.distanceToGo() == 0){
+    if (stepper.distanceToGo() == 0 && Dir == 0){
       stepper.run();
       isRunning = false;
     }
+    if (stepper.distanceToGo() == 0 && Dir == 1){
+      Dir = 0;
+      Pos = stepper.currentPosition() - Backlash;
+      stepper.moveTo(Pos);
+      stepper.run();
+      isRunning = true;
+    }
   }
-  else{
+  else {
     // read the command until the terminating # character
-    while(Serial.available() && !eoc){
+    while (Serial.available() && !eoc){
       inChar = Serial.read();
-      if(inChar != '#' && inChar != ':'){
+      if (inChar != '#' && inChar != ':'){
         line[idx++] = inChar;
-        if(idx >= 8){
+        if (idx >= 8){
           idx = 8 - 1;
         }
       }
       else{
-        if(inChar == '#'){
+        if (inChar == '#'){
           eoc = 1;
         }
       }
@@ -119,15 +136,14 @@ void loop(){
   if (irrecv.decode(&results)){
         if (results.value == 0XFFFFFFFF)
           results.value = key_value;
-        switch(results.value){
+        switch (results.value){
           case 0xFFA25D:
           Speed -= 100;
             if (Speed <= 0){
             Speed = 100;
             }
-          //delay(100); //TODO non-blocking
-          stepper.setSpeed(Speed);
-          //stepper.setMaxSpeed(Speed);
+          delay(100); //TODO non-blocking
+          stepper.setMaxSpeed(Speed);
           break;
           
           case 0xFFE21D:
@@ -135,14 +151,13 @@ void loop(){
             if (Speed > MaxSpeed){
             Speed = MaxSpeed;
             }
-          //delay(100); //TODO non-blocking
-          stepper.setSpeed(Speed);
-          //stepper.setMaxSpeed(Speed);
+          delay(100); //TODO non-blocking
+          stepper.setMaxSpeed(Speed);
           isRunning = true;
           break;
 
           case 0xFF22DD:
-          Pos -= 100;
+          Pos -= 20;
             if (Pos < 0){
             Pos = 0;
             }
@@ -152,7 +167,7 @@ void loop(){
           break;
 
           case 0xFFC23D:
-          Pos += 100;
+          Pos += 20;
             if (Pos > 100000){
             Pos = 100000;
             }
@@ -162,7 +177,7 @@ void loop(){
           break;
 
           case 0xFF9867:
-          Pos = 0;
+          Pos = 10000;
           stepper.moveTo(Pos);
           isRunning = true;
           break;
@@ -186,10 +201,10 @@ void loop(){
     memset(param, 0, 8);
     
     uint8_t len = strlen(line);
-    if(len >= 2){
+    if (len >= 2){
       strncpy(cmd, line, 2);
     }
-    if(len > 2){
+    if (len > 2){
       strncpy(param, line + 2, len - 2);
     }
     
@@ -201,43 +216,49 @@ void loop(){
     // :C# is a temperature conversion, doesn't require any response
 
     // LED backlight value, always return "00"
-    if (!strcasecmp(cmd, "GB")) {
+    if (!strcasecmp(cmd, "GB")){
       Serial.print("00#");
     }
     
     // stop a move
-    if (!strcasecmp(cmd, "FQ")) {
+    if (!strcasecmp(cmd, "FQ")){
       stepper.moveTo(stepper.currentPosition());
       stepper.run();
       isRunning = true;
     }
     
     // set new motor position
-    if (!strcasecmp(cmd, "SN")) {
+    if (!strcasecmp(cmd, "SN")){
       Pos = hexstr2long(param);
+      if (Pos <= stepper.currentPosition()){
+        Dir = 0;
+      }
+      if (Pos > stepper.currentPosition()){
+        Dir = 1;
+        Pos = Pos + Backlash;
+      }
       stepper.moveTo(Pos);
     }
     
     // initiate a move
-    if (!strcasecmp(cmd, "FG")) {
+    if (!strcasecmp(cmd, "FG")){
       driver.rms_current(RunCurrent);
       isRunning = true;
     }
 
     // home the motor, hard-coded, ignore parameters since we only have one motor
-    if (!strcasecmp(cmd, "PH")) {
-      stepper.setCurrentPosition(8000);
-      stepper.moveTo(0);
+    if (!strcasecmp(cmd, "PH")){
+      stepper.setCurrentPosition(10000);
       isRunning = true;
     }
 
     // firmware value, always return "10"
-    if (!strcasecmp(cmd, "GV")) {
+    if (!strcasecmp(cmd, "GV")){
       Serial.print("01#");
     }
 
     // get the current motor position
-    if (!strcasecmp(cmd, "GP")) {
+    if (!strcasecmp(cmd, "GP")){
       Pos = stepper.currentPosition();
       char tempString[6];
       sprintf(tempString, "%04X", Pos);
@@ -246,7 +267,7 @@ void loop(){
     }
 
     // get the new motor position (target)
-    if (!strcasecmp(cmd, "GN")) {
+    if (!strcasecmp(cmd, "GN")){
       Pos = stepper.targetPosition();
       char tempString[6];
       sprintf(tempString, "%04X", Pos);
@@ -254,8 +275,8 @@ void loop(){
       Serial.print("#");
     }
 
-    // get the current temperature, hard-coded
-    if (!strcasecmp(cmd, "GT")) {
+    // get the current temperature
+    if (!strcasecmp(cmd, "GT")){
       if(!isRunning){
         TempSum = 0;
         for(uint8_t i=0; i < TempAvgs; i++){
@@ -275,12 +296,12 @@ void loop(){
     }
     
     // get the temperature coefficient, hard-coded
-    if (!strcasecmp(cmd, "GC")) {
+    if (!strcasecmp(cmd, "GC")){
       Serial.print("01#");
     }
     
     // get the current motor speed, only values of 02, 04, 08, 10, 20
-    if (!strcasecmp(cmd, "GD")) {
+    if (!strcasecmp(cmd, "GD")){
       char tempString[4];
       sprintf(tempString, "%02X", 02);
       Serial.print(tempString);
@@ -288,19 +309,19 @@ void loop(){
     }
     
     // set speed, only acceptable values are 02, 04, 08, 10, 20
-    if (!strcasecmp(cmd, "SD")) {
+    if (!strcasecmp(cmd, "SD")){
       //Speed = hexstr2long(param);
       //stepper.setSpeed(Speed);
       //stepper.setMaxSpeed(Speed);
     }
     
     // whether half-step is enabled or not, always return "00"
-    if (!strcasecmp(cmd, "GH")) {
+    if (!strcasecmp(cmd, "GH")){
       Serial.print("00#");
     }
     
     // motor is moving - 01 if moving, 00 otherwise
-    if (!strcasecmp(cmd, "GI")) {
+    if (!strcasecmp(cmd, "GI")){
       if (isRunning){
         Serial.print("01#");
       } 
@@ -310,14 +331,14 @@ void loop(){
     }
     
     // set current motor position
-    if (!strcasecmp(cmd, "SP")) {
+    if (!strcasecmp(cmd, "SP")){
       Pos = hexstr2long(param);
       stepper.setCurrentPosition(Pos);
     }
   }
 }
 
-long hexstr2long(char *line) {
+long hexstr2long(char *line){
   long ret = 0;
   ret = strtol(line, NULL, 16);
   return (ret);
