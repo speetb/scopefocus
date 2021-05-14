@@ -43,7 +43,7 @@ char      inChar;
 char      cmd[8];
 char      param[8];
 char      line[8];
-int32_t   Pos=0;
+int32_t   Pos = StartPos;
 int16_t   Temperature = 40;
 uint8_t   Dir = 0;
 bool      isRunning = false;
@@ -85,6 +85,7 @@ void setup() {
 //  servo.attach(AuxPin);
   irrecv.enableIRIn();
   stepper.setCurrentPosition(StartPos);
+  pos = StartPos;
   memset(line, 0, 8);
   millisLastMove = millis();
 }
