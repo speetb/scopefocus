@@ -12,6 +12,7 @@
 #define Microsteps  8     //Can be one of these: 1, 2, 4, 8, 16, 32, 64, 128, 256.
 #define TempAvgs    5     //Average this many temperature readings
 #define Backlash    100   //How many steps to over-travel for single-direction focusing
+#define StartPos    10000 //This defines the position the focuser starts up at. Useful since no negative position values are allowed.
 
 //Pin def for my prototype
 #define EnPin       6
@@ -83,9 +84,7 @@ void setup() {
 
 //  servo.attach(AuxPin);
   irrecv.enableIRIn();
-  
-  stepper.setCurrentPosition(10000);
-  
+  stepper.setCurrentPosition(StartPos);
   memset(line, 0, 8);
   millisLastMove = millis();
 }
