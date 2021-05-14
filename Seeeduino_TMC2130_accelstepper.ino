@@ -85,7 +85,7 @@ void setup() {
 //  servo.attach(AuxPin);
   irrecv.enableIRIn();
   stepper.setCurrentPosition(StartPos);
-  pos = StartPos;
+  Pos = StartPos;
   memset(line, 0, 8);
   millisLastMove = millis();
 }
