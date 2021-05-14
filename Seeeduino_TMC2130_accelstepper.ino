@@ -4,7 +4,7 @@
 #include <IRremote.h>
 
 #define MaxSpeed    2000  //Max speed in steps/s
-#define MaxAcc      6000  //Max accelleration in steps/s/s
+#define MaxAcc      5000  //Max accelleration in steps/s/s
 #define TurnDir     true  //Focuser rotation direction using true or false
 #define RunCurrent  1200  //RMS current (in Ampere) when moving
 #define HoldTime    2     //How long (in miliseconds) to hold RunCurrent after a move
@@ -13,13 +13,12 @@
 #define TempAvgs    5     //Average this many temperature readings
 #define Backlash    100   //How many steps to over-travel for single-direction focusing
 
-
 //Pin def for my prototype
 #define EnPin       6
 #define DirPin      5
 #define StepPin     4
 #define CsPin       7
-#define TempPin     A0
+#define TempPin     A2
 #define RecieverPin 3
 #define AuxPin      0
 //#define DiagPin     7
@@ -43,7 +42,7 @@ char      inChar;
 char      cmd[8];
 char      param[8];
 char      line[8];
-int32_t   Pos = 10000;
+int32_t   Pos=0;
 int16_t   Temperature = 40;
 uint8_t   Dir = 0;
 bool      isRunning = false;
@@ -84,6 +83,8 @@ void setup() {
 
 //  servo.attach(AuxPin);
   irrecv.enableIRIn();
+  
+  stepper.setCurrentPosition(10000);
   
   memset(line, 0, 8);
   millisLastMove = millis();
