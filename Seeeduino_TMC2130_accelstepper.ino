@@ -1,43 +1,45 @@
 #include <TMC2130Stepper.h>
 #include <AccelStepper.h>
-#include <Servo.h>
-#include <IRremote.h>
+// #include <Servo.h>
 
-#define MaxSpeed    2000  //Max speed in steps/s
-#define MaxAcc      5000  //Max accelleration in steps/s/s
-#define TurnDir     true  //Focuser rotation direction using true or false
-#define RunCurrent  1200  //RMS current (in Ampere) when moving
-#define HoldTime    2     //How long (in miliseconds) to hold RunCurrent after a move
-#define HoldCurrent 120   //RMS current (in Ampere) when still
-#define Microsteps  8     //Can be one of these: 1, 2, 4, 8, 16, 32, 64, 128, 256.
-#define TempAvgs    5     //Average this many temperature readings
-#define Backlash    100   //How many steps to over-travel for single-direction focusing
-#define StartPos    10000 //This defines the position the focuser starts up at. Useful since no negative position values are allowed.
+#define MaxSpeed    3000   //Max speed in microsteps/s
+#define MaxAcc      6000   //Max accelleration in microsteps/s/s
+#define TurnDir     true   //Focuser rotation direction using true or false
+#define RunCurrent  1000   //RMS current (in mA) when moving
+#define HoldTime    5      //How long (in ms) to hold RunCurrent after a move
+#define HoldCurrent 100    //RMS current (in mA) when still
+#define Microsteps  16     //Can be one of these: 1, 2, 4, 8, 16, 32, 64, 128, 256.
+#define TempAvgs    5      //Average this many temperature readings
+#define Backlash    500    //How many microsteps to over-travel for single-direction focusing
+#define StartPos    10000  //This defines the position in microsteps the focuser starts up at. Useful since no negative position values are allowed.
 
 //Pin def for my prototype
-#define EnPin       6
-#define DirPin      5
-#define StepPin     4
-#define CsPin       7
-#define TempPin     A2
-#define RecieverPin 3
-#define AuxPin      0
-//#define DiagPin     7
-
-//Pin def for ScopeFocus v1.1 - TODO: confirm
 //#define EnPin       6
 //#define DirPin      5
 //#define StepPin     4
-//#define CsPin       8
-//#define TempPin     A1
+//#define CsPin       7
+//#define TempPin     A2
 //#define RecieverPin 3
-//#define ServoPin    2
+//#define AuxPin      0
+//#define DiagPin     7
+
+//Pin def for ScopeFocus v1.1
+//#define EnPin       5
+//#define DirPin      4
+//#define StepPin     3
+//#define CsPin       7
+//#define TempPin     A0
+//#define DiagPin #
+
+//Pin def for ScopeFocus v1.2
+#define EnPin       3
+#define DirPin      2
+#define StepPin     1
+#define CsPin       7
+#define TempPin     A0
 
 TMC2130Stepper driver = TMC2130Stepper(EnPin, DirPin, StepPin, CsPin);
 AccelStepper stepper = AccelStepper(stepper.DRIVER, StepPin, DirPin);
-//Servo servo;
-IRrecv irrecv(RecieverPin);
-decode_results results;
 
 char      inChar;
 char      cmd[8];
@@ -53,12 +55,12 @@ uint8_t   idx = 0;
 int16_t   TempSum = 0;
 uint32_t  millisLastMove = 0;
 float     MeasVolt = 0;
-uint32_t  key_value = 0;
 
 void setup() {
   Serial.begin(38400);
+//  Serial.begin(9600);
   SPI.begin();
-
+  
   pinMode(CsPin, OUTPUT);
   digitalWrite(CsPin, HIGH);
   analogReadResolution(12);
@@ -70,20 +72,13 @@ void setup() {
   driver.stealth_autoscale(1);
   driver.interpolate(1);
   
-//  driver.off_time(2);
-//  driver.blank_time(24);
-//  driver.hysterisis_start(0);
-//  driver.hysterisis_end(13);
-  
   stepper.setMaxSpeed(Speed);
   stepper.setSpeed(Speed);
   stepper.setAcceleration(MaxAcc);
   stepper.setEnablePin(EnPin);
-  stepper.setPinsInverted(true, false, true);
+  stepper.setPinsInverted(TurnDir, false, true);
   stepper.enableOutputs();
-
-//  servo.attach(AuxPin);
-  irrecv.enableIRIn();
+  
   stepper.setCurrentPosition(StartPos);
   Pos = StartPos;
   memset(line, 0, 8);
@@ -132,68 +127,6 @@ void loop(){
         }
       }
     }
-  }
-
-  if (irrecv.decode(&results)){
-        if (results.value == 0XFFFFFFFF)
-          results.value = key_value;
-        switch (results.value){
-          case 0xFFA25D:
-          Speed -= 100;
-            if (Speed <= 0){
-            Speed = 100;
-            }
-          delay(100); //TODO non-blocking
-          stepper.setMaxSpeed(Speed);
-          break;
-          
-          case 0xFFE21D:
-          Speed += 100;
-            if (Speed > MaxSpeed){
-            Speed = MaxSpeed;
-            }
-          delay(100); //TODO non-blocking
-          stepper.setMaxSpeed(Speed);
-          isRunning = true;
-          break;
-
-          case 0xFF22DD:
-          Pos -= 20;
-            if (Pos < 0){
-            Pos = 0;
-            }
-          //delay(100); //TODO non-blocking
-          stepper.moveTo(Pos);
-          isRunning = true;
-          break;
-
-          case 0xFFC23D:
-          Pos += 20;
-            if (Pos > 100000){
-            Pos = 100000;
-            }
-          //delay(100); //TODO non-blocking
-          stepper.moveTo(Pos);
-          isRunning = true;
-          break;
-
-          case 0xFF9867:
-          Pos = 10000;
-          stepper.moveTo(Pos);
-          isRunning = true;
-          break;
-
-//          case 0xFF6897:
-//          servo.write(0);
-//          break;
-//
-//          case 0xFFB04F:
-//          servo.write(180);
-//          break;
-
-        }
-        key_value = results.value;
-        irrecv.resume();
   }
   
   // process the command we got
@@ -253,9 +186,9 @@ void loop(){
       isRunning = true;
     }
 
-    // firmware value, always return "10"
+    // firmware value
     if (!strcasecmp(cmd, "GV")){
-      Serial.print("01#");
+      Serial.print("12#");
     }
 
     // get the current motor position
@@ -296,15 +229,15 @@ void loop(){
       Serial.print("#");
     }
     
-    // get the temperature coefficient, hard-coded
+    // get the temperature coefficient, hard-coded 'nothing'
     if (!strcasecmp(cmd, "GC")){
-      Serial.print("01#");
+      Serial.print("02#");
     }
     
     // get the current motor speed, only values of 02, 04, 08, 10, 20
     if (!strcasecmp(cmd, "GD")){
       char tempString[4];
-      sprintf(tempString, "%02X", 02);
+      sprintf(tempString, "%02X", int(04));
       Serial.print(tempString);
       Serial.print("#");
     }
